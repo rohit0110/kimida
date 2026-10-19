@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 
 use crate::{
     constants::*,
-    error::HeirloomError,
+    error::KimiDaError,
     state::{Plan, PlanStatus},
 };
 
@@ -31,14 +31,14 @@ fn nonce_authority(nonce: &AccountInfo) -> Result<Pubkey> {
     require_keys_eq!(
         *nonce.owner,
         anchor_lang::system_program::ID,
-        HeirloomError::InvalidNonceAccount
+        KimiDaError::InvalidNonceAccount
     );
     let data = nonce.try_borrow_data()?;
-    require!(data.len() >= 40, HeirloomError::InvalidNonceAccount);
+    require!(data.len() >= 40, KimiDaError::InvalidNonceAccount);
     let version = u32::from_le_bytes(data[0..4].try_into().unwrap());
     let state = u32::from_le_bytes(data[4..8].try_into().unwrap());
     // Legacy (0) nonces cannot validate durable transactions; require Current (1) + Initialized (1).
-    require!(version == 1 && state == 1, HeirloomError::InvalidNonceAccount);
+    require!(version == 1 && state == 1, KimiDaError::InvalidNonceAccount);
     Ok(Pubkey::try_from(&data[8..40]).unwrap())
 }
 
@@ -52,13 +52,13 @@ pub fn handle_initialize_plan(
 ) -> Result<()> {
     Plan::validate_schedule(interval, grace)?;
     Plan::validate_sweep_tx(&sweep_tx)?;
-    require!(beneficiary != Pubkey::default(), HeirloomError::InvalidBeneficiary);
+    require!(beneficiary != Pubkey::default(), KimiDaError::InvalidBeneficiary);
 
     let nonce = ctx.accounts.nonce_account.to_account_info();
     require_keys_eq!(
         nonce_authority(&nonce)?,
         keeper,
-        HeirloomError::BadNonceAuthority
+        KimiDaError::BadNonceAuthority
     );
 
     let plan = &mut ctx.accounts.plan;

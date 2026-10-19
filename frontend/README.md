@@ -1,4 +1,4 @@
-# Heirloom frontend
+# KimiDa frontend
 
 Full project guide (devnet deployment, backend in Docker, demo steps): `../README.md`.
 
@@ -6,8 +6,8 @@ Single page: connect a wallet, enter a beneficiary and a check-in period, create
 wallet has a plan the page shows the time left to sign and a **Sign** button.
 
 Stack: Vite, React, TypeScript, `@solana/wallet-adapter` (Wallet Standard wallets are auto-detected).
-No Anchor TS client: `src/heirloom.ts` encodes the instructions directly, using the discriminators in
-`../anchor/target/idl/heirloom.json`.
+No Anchor TS client: `src/kimida.ts` encodes the instructions directly, using the discriminators in
+`../anchor/target/idl/kimida.json`.
 
 ## Run
 
@@ -24,12 +24,12 @@ npm run build            # typecheck + production bundle
 | Variable | Meaning |
 |----------|---------|
 | `VITE_RPC_URL` | Solana RPC (default devnet) |
-| `VITE_PROGRAM_ID` | the deployed Heirloom program |
+| `VITE_PROGRAM_ID` | the deployed KimiDa program |
 | `VITE_KEEPER_PUBKEY` | keeper that becomes nonce authority and co-signer of plans made here. Must match the running keeper |
 | `VITE_GRACE_SECONDS` | grace applied to every plan created from the page |
 
 The page and the keeper must point at the same cluster and program. The keeper must be running
-(`heirloom-keeper run`, see `../anchor/README.md`) for plans to execute.
+(`kimida-keeper run`, see `../anchor/README.md`) for plans to execute.
 
 ## What the buttons do
 
@@ -45,7 +45,7 @@ The page and the keeper must point at the same cluster and program. The keeper m
 ## Verifying without a browser wallet
 
 ```bash
-npm run smoke -- <owner-keypair.json> <beneficiary-pubkey> 40   # create + check in via src/heirloom.ts
+npm run smoke -- <owner-keypair.json> <beneficiary-pubkey> 40   # create + check in via src/kimida.ts
 npx tsx scripts/read-plan.ts <owner-pubkey>                      # decode a plan
 ```
 

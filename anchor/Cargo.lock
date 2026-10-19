@@ -2151,59 +2151,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2304e00983f87ffb38b55b444b5e3b60a884b5d30c0fca7d82fe33449bbe55ea"
 
 [[package]]
-name = "heirloom"
-version = "0.1.0"
-dependencies = [
- "anchor-lang",
- "litesvm",
- "solana-account",
- "solana-clock 3.2.1",
- "solana-instructions-sysvar",
- "solana-keypair",
- "solana-message",
- "solana-sdk-ids",
- "solana-signer",
- "solana-system-interface 2.0.0",
- "solana-transaction",
-]
-
-[[package]]
-name = "heirloom-client"
-version = "0.1.0"
-dependencies = [
- "anchor-lang",
- "anyhow",
- "bincode",
- "clap",
- "dotenvy",
- "heirloom",
- "solana-client",
- "solana-commitment-config",
- "solana-sdk",
- "solana-system-interface 2.0.0",
-]
-
-[[package]]
-name = "heirloom-keeper"
-version = "0.1.0"
-dependencies = [
- "anchor-lang",
- "anyhow",
- "bincode",
- "clap",
- "dotenvy",
- "heirloom",
- "heirloom-client",
- "serde",
- "serde_json",
- "solana-account-decoder-client-types",
- "solana-client",
- "solana-commitment-config",
- "solana-sdk",
- "solana-system-interface 2.0.0",
-]
-
-[[package]]
 name = "hermit-abi"
 version = "0.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2646,6 +2593,59 @@ name = "keccak-const"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "57d8d8ce877200136358e0bbff3a77965875db3af755a11e1fa6b1b3e2df13ea"
+
+[[package]]
+name = "kimida"
+version = "0.1.0"
+dependencies = [
+ "anchor-lang",
+ "litesvm",
+ "solana-account",
+ "solana-clock 3.2.1",
+ "solana-instructions-sysvar",
+ "solana-keypair",
+ "solana-message",
+ "solana-sdk-ids",
+ "solana-signer",
+ "solana-system-interface 2.0.0",
+ "solana-transaction",
+]
+
+[[package]]
+name = "kimida-client"
+version = "0.1.0"
+dependencies = [
+ "anchor-lang",
+ "anyhow",
+ "bincode",
+ "clap",
+ "dotenvy",
+ "kimida",
+ "solana-client",
+ "solana-commitment-config",
+ "solana-sdk",
+ "solana-system-interface 2.0.0",
+]
+
+[[package]]
+name = "kimida-keeper"
+version = "0.1.0"
+dependencies = [
+ "anchor-lang",
+ "anyhow",
+ "bincode",
+ "clap",
+ "dotenvy",
+ "kimida",
+ "kimida-client",
+ "serde",
+ "serde_json",
+ "solana-account-decoder-client-types",
+ "solana-client",
+ "solana-commitment-config",
+ "solana-sdk",
+ "solana-system-interface 2.0.0",
+]
 
 [[package]]
 name = "lazy_static"

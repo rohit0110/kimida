@@ -1,7 +1,7 @@
 # Turbin3 Capstone, Deliverable 2: Atomic Requirements & Architecture Diagram
 
-**Project:** Heirloom, non-custodial digital succession for Solana wallets.
-**Team:** Heirloom —  Rohit Rathore. Josh Sandhu
+**Project:** KimiDa, non-custodial digital succession for Solana wallets.
+**Team:** KimiDa —  Rohit Rathore. Josh Sandhu
 
 ---
 
@@ -9,13 +9,13 @@
 
 ## 1.1 The idea
 
-Heirloom lets a Solana owner name a beneficiary and a check-in interval. While the owner is alive, **all assets stay in the owner's own wallet** (no vault, no escrow, no shared keypair). If the owner stops checking in, the owner's *pre-authorized* sweep can be completed and broadcast, moving the live SOL balance to the beneficiary.
+KimiDa lets a Solana owner name a beneficiary and a check-in interval. While the owner is alive, **all assets stay in the owner's own wallet** (no vault, no escrow, no shared keypair). If the owner stops checking in, the owner's *pre-authorized* sweep can be completed and broadcast, moving the live SOL balance to the beneficiary.
 
 ## 1.2 Core mechanism
 
 - The owner signs, once per check-in cycle, a durable-nonce transaction `[AdvanceNonceAccount, heir_sweep(beneficiary)]`. `heir_sweep` has **no amount argument**; it reads the owner's live lamports at execution time (POC-confirmed).
 - **Problem found in the POC:** anyone holding a fully signed copy can submit it early; the failed attempt still advances the nonce and permanently burns the only copy.
-- **Adopted fix:** the Heirloom keeper is the nonce authority *and* fee payer, so the transaction is **structurally incomplete** (missing the keeper signature) until the deadline passes. Solana rejects a transaction with a missing signature before any instruction runs, so the nonce can't be burned by a premature replay. The owner-signed partial transaction is safe to store anywhere.
+- **Adopted fix:** the KimiDa keeper is the nonce authority *and* fee payer, so the transaction is **structurally incomplete** (missing the keeper signature) until the deadline passes. Solana rejects a transaction with a missing signature before any instruction runs, so the nonce can't be burned by a premature replay. The owner-signed partial transaction is safe to store anywhere.
 
 ## 1.3 MVP use cases (5, each = 1 state transition = 1 Anchor instruction)
 
@@ -53,7 +53,7 @@ Your noted problem (nonce burned by other parties) is the exact risk the withhel
 | Category | Actor | Role in MVP | Signs |
 |----------|-------|-------------|-------|
 | Direct | **Owner** | Creates, updates and cancels the plan, checks in, presigns the sweep each cycle | UC1, UC2, UC4, UC5, and (earlier, offline) the owner half of UC3 |
-| Direct | **Keeper** (Heirloom relay) | Reads the stored half-signed sweep from the `Plan` PDA, watches deadline, adds final signature and broadcasts | UC3 (co-signer + fee payer + nonce authority) |
+| Direct | **Keeper** (KimiDa relay) | Reads the stored half-signed sweep from the `Plan` PDA, watches deadline, adds final signature and broadcasts | UC3 (co-signer + fee payer + nonce authority) |
 | Beneficiary | **Beneficiary** | Receives SOL passively | Nothing |
 | Administrator | *(none on-chain in MVP)* | `ProtocolConfig`/admin pause deferred to roadmap | — |
 | Stakeholder | Wallet providers, estate/legal advisors, other legal heirs, auditors | Off-chain interest only | — |
@@ -65,7 +65,7 @@ Your noted problem (nonce burned by other parties) is the exact risk the withhel
 
 | Rule | UC1 `initialize_plan` | UC2 `check_in` | UC3 `heir_sweep` |
 |------|----------------------|----------------|------------------|
-| **1. Atomicity** (exactly one handler) | Pass. Creates one PDA, including the first `sweep_tx`. The nonce account is created beforehand via System Program and is **not** part of this instruction. | Pass. One write: `last_checkin` and the replacement `sweep_tx` together ("refresh liveness and pre-authorization"). Building and signing the bytes is client-side. | Pass **with caveat**: the transaction contains `AdvanceNonceAccount` (System Program) + `heir_sweep` (Heirloom). Only `heir_sweep` is our handler; the nonce advance is a required companion instruction, not a second state transition of ours. |
+| **1. Atomicity** (exactly one handler) | Pass. Creates one PDA, including the first `sweep_tx`. The nonce account is created beforehand via System Program and is **not** part of this instruction. | Pass. One write: `last_checkin` and the replacement `sweep_tx` together ("refresh liveness and pre-authorization"). Building and signing the bytes is client-side. | Pass **with caveat**: the transaction contains `AdvanceNonceAccount` (System Program) + `heir_sweep` (KimiDa). Only `heir_sweep` is our handler; the nonce advance is a required companion instruction, not a second state transition of ours. |
 | **2. State ownership** | Pass. All state in `Plan` PDA (program-owned). | Pass. `Plan` PDA. | Pass. Status in `Plan`; lamports move between System-owned wallets via CPI. |
 | **3. Real signers** | Pass. Owner signs. | Pass. Owner signs. | Pass **with caveat**: signers are explicit — owner (signed weeks earlier, offline), keeper (signs at execution). The keeper is a *named, on-record* signer, not a hidden backend; its key is stored in `plan.keeper`. |
 | **4. On-chain vs client** | On-chain: PDA creation, validation. Client: nonce account creation, UI. | On-chain: timestamp write. Client: build and sign the fresh partial sweep before sending, reminders. | On-chain: deadline gate, beneficiary check, transfer, status. Client/off-chain: deadline polling and pre-flight simulation. |
@@ -105,7 +105,7 @@ Your noted problem (nonce burned by other parties) is the exact risk the withhel
 
 | Account | Owner program | Seeds / address | Mutable | Holds |
 |---------|---------------|-----------------|---------|-------|
-| `Plan` PDA | Heirloom | `["plan", owner_pubkey]` | UC2, UC3, UC5; closed by UC4 | `owner`, `beneficiary`, `keeper`, `nonce_account`, `checkin_interval`, `grace_period`, `last_checkin`, `status`, `bump` |
+| `Plan` PDA | KimiDa | `["plan", owner_pubkey]` | UC2, UC3, UC5; closed by UC4 | `owner`, `beneficiary`, `keeper`, `nonce_account`, `checkin_interval`, `grace_period`, `last_checkin`, `status`, `bump` |
 | Nonce account | System Program | Keypair account (not PDA) | By keeper (authority) via `AdvanceNonceAccount` | Durable nonce value; authority = keeper |
 | Owner wallet | System Program | Owner keypair | Lamports debited in UC3 | The assets (never moved before trigger) |
 | Beneficiary wallet | System Program | Beneficiary pubkey | Lamports credited in UC3 | — |
@@ -142,7 +142,7 @@ Your noted problem (nonce burned by other parties) is the exact risk the withhel
 | A4 | `check_in` doesn't actually invalidate the old presigned transaction on-chain; invalidation depends on the keeper advancing the nonce. | On-chain vs client | **Partly valid.** `check_in` does not touch the nonce, so an old half-signed copy is not invalidated on-chain. It is harmless: the keeper holds the final signature, and the deadline gate uses the updated `last_checkin`, so a stale copy fails the gate. Stored `sweep_tx` is overwritten on every check-in (REQ10); a stale copy fails the deadline gate and only the keeper can submit it (REQ11). | `[DECIDE]` |
 | A5 | Live-balance sweep means a compromised owner key near the trigger could drain funds first. | Real signers | **Out of scope.** Key compromise of the owner defeats any non-custodial scheme; disclosed in LOI. | `[DECIDE]` |
 | A6 | `Plan` PDA seeded only by owner allows one plan per owner; blocks multiple beneficiaries/plans. | State ownership | **Accepted as MVP limit.** Multi-beneficiary is roadmap. | `[DECIDE]` |
-| A7 | UC3 "contains two instructions" violates 1 use case = 1 handler. | Atomicity | **Rejected.** `AdvanceNonceAccount` is a required System Program companion for durable-nonce transactions, not an Heirloom state transition. Only `heir_sweep` is ours. | This is the clearest AI suggestion to override; good candidate for the individual reflection. `[DECIDE]` |
+| A7 | UC3 "contains two instructions" violates 1 use case = 1 handler. | Atomicity | **Rejected.** `AdvanceNonceAccount` is a required System Program companion for durable-nonce transactions, not an KimiDa state transition. Only `heir_sweep` is ours. | This is the clearest AI suggestion to override; good candidate for the individual reflection. `[DECIDE]` |
 | A8 | Storing a signed transaction publicly on-chain leaks it; shouldn't it be encrypted? | State ownership / Real signers | **Rejected.** The transaction is missing the keeper's required signature, so it cannot be submitted or used to burn the nonce by anyone else. Encryption would add cost and a key to manage for no gain. Residual: it reveals the beneficiary pubkey, which the plan already exposes. | `[DECIDE]` |
 
 ---
@@ -159,7 +159,7 @@ flowchart LR
 
   end
 
-  subgraph HEIR["Heirloom Program (Anchor)"]
+  subgraph HEIR["KimiDa Program (Anchor)"]
     I1["initialize_plan<br/>REQ01"]
     I2["check_in<br/>REQ02"]
     I3["heir_sweep<br/>REQ03"]

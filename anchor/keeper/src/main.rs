@@ -1,15 +1,15 @@
-//! Heirloom keeper (REQ11, REQ14): nonce authority + fee payer + final co-signer.
+//! KimiDa keeper (REQ11, REQ14): nonce authority + fee payer + final co-signer.
 //!
-//!   heirloom-keeper keygen            # create the keeper keypair (once)
-//!   heirloom-keeper info              # pubkey + balance
-//!   heirloom-keeper scan              # one pass
-//!   heirloom-keeper run --every 30    # loop
+//!   kimida-keeper keygen            # create the keeper keypair (once)
+//!   kimida-keeper info              # pubkey + balance
+//!   kimida-keeper scan              # one pass
+//!   kimida-keeper run --every 30    # loop
 
 use anyhow::Result;
 use clap::{Parser, Subcommand};
 use solana_sdk::signature::{write_keypair_file, Keypair, Signer};
 
-use heirloom_keeper::{config::Config, scan};
+use kimida_keeper::{config::Config, scan};
 
 #[derive(Parser)]
 struct Cli {
@@ -54,7 +54,7 @@ fn main() -> Result<()> {
             let rpc = cli.cfg.rpc();
             println!("keeper {}  balance {} lamports", keeper.pubkey(), bal);
             println!("rpc {}  genesis {}", cli.cfg.rpc, rpc.get_genesis_hash()?);
-            println!("program {}", heirloom::id());
+            println!("program {}", kimida::id());
         }
         Cmd::Scan => scan::run_scan(&cli.cfg)?,
         Cmd::Run { every } => loop {

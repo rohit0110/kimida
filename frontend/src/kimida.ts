@@ -1,7 +1,7 @@
 // Browser-side port of anchor/client (owner side). No framework imports and no import.meta, so the
 // same file runs in the page and in scripts/devnet-smoke.ts.
 //
-// Instruction discriminators come from anchor/target/idl/heirloom.json.
+// Instruction discriminators come from anchor/target/idl/kimida.json.
 
 import {
   ComputeBudgetProgram,
@@ -14,6 +14,8 @@ import {
   Transaction,
   TransactionInstruction,
 } from "@solana/web3.js";
+
+import { KimiDaUserError } from "./errors";
 
 export interface Ctx {
   programId: PublicKey;
@@ -106,16 +108,16 @@ export async function fetchPlan(conn: Connection, ctx: Ctx, owner: PublicKey): P
 /** On-chain Clock unix time, the clock the program's deadline check uses. */
 export async function chainTime(conn: Connection): Promise<number> {
   const acc = await conn.getAccountInfo(SYSVAR_CLOCK_PUBKEY, "confirmed");
-  if (!acc) throw new Error("clock sysvar unavailable");
+  if (!acc) throw new KimiDaUserError("Cannot read network time", "The clock account could not be fetched from the RPC.");
   return Number(acc.data.readBigInt64LE(32));
 }
 
 async function readNonce(conn: Connection, nonce: PublicKey) {
   const acc = await conn.getAccountInfo(nonce, "confirmed");
-  if (!acc) throw new Error("nonce account not found");
+  if (!acc) throw new KimiDaUserError("Nonce account not found", "The nonce account for this plan does not exist on this network.");
   const d = acc.data;
   if (d.length < NONCE_ACCOUNT_LEN || d.readUInt32LE(0) !== 1 || d.readUInt32LE(4) !== 1) {
-    throw new Error("not an initialized (current-version) nonce account");
+    throw new KimiDaUserError("Nonce account is not valid", "It is uninitialised or an old-format nonce, which cannot be used.");
   }
   return {
     authority: new PublicKey(d.subarray(8, 40)),
@@ -128,7 +130,7 @@ async function readNonce(conn: Connection, nonce: PublicKey) {
 async function sendSigned(conn: Connection, tx: Transaction): Promise<string> {
   const sig = await conn.sendRawTransaction(tx.serialize(), { skipPreflight: false });
   const res = await conn.confirmTransaction(sig, "confirmed");
-  if (res.value.err) throw new Error(`transaction failed: ${JSON.stringify(res.value.err)}`);
+  if (res.value.err) throw new Error(`transaction failed: ${JSON.stringify(res.value.err)}`); // explain() reads the Custom code
   return sig;
 }
 
@@ -164,7 +166,9 @@ async function buildPartialSweep(
   nonce: PublicKey,
 ): Promise<Buffer> {
   const info = await readNonce(conn, nonce);
-  if (!info.authority.equals(ctx.keeper)) throw new Error("nonce authority is not the keeper");
+  if (!info.authority.equals(ctx.keeper)) {
+    throw new KimiDaUserError("Nonce account is not controlled by the keeper", "Create the plan again.");
+  }
 
   const advance = SystemProgram.nonceAdvance({ noncePubkey: nonce, authorizedPubkey: ctx.keeper });
   const sweep = new TransactionInstruction({
@@ -195,14 +199,26 @@ async function buildPartialSweep(
   const before = tx.serializeMessage();
   const signed = await w.signTransaction(tx);
   if (!Buffer.from(signed.serializeMessage()).equals(before)) {
-    throw new Error(
-      "Your wallet modified the sweep transaction (for example by adding priority-fee " +
-        "instructions). A modified sweep cannot execute, so the plan was not created.",
+    throw new KimiDaUserError(
+      "Your wallet changed the transaction",
+      "It altered the pre-signed sweep (for example by adding priority-fee instructions). A modified sweep cannot execute, so nothing was created. Try another wallet or disable its automatic fee settings.",
     );
   }
   const bytes = signed.serialize({ requireAllSignatures: false, verifySignatures: false });
-  if (bytes.length > MAX_SWEEP_TX_LEN) throw new Error(`partial sweep is ${bytes.length} bytes`);
+  if (bytes.length > MAX_SWEEP_TX_LEN) throw new KimiDaUserError("Pre-signed transaction is too large", `It is ${bytes.length} bytes; the limit is ${MAX_SWEEP_TX_LEN}.`);
   return bytes;
+}
+
+const PLAN_ACCOUNT_LEN = 8 + 32 * 4 + 8 * 3 + 1 + 1 + 4 + MAX_SWEEP_TX_LEN; // 8 + Plan::INIT_SPACE
+const FEE_BUFFER = 20_000; // three transactions at 5,000 lamports, with headroom
+
+/** Lamports the owner needs to create a plan: nonce rent + plan rent (both refundable) + fees. */
+export async function createPlanCost(conn: Connection): Promise<number> {
+  const [nonce, plan] = await Promise.all([
+    conn.getMinimumBalanceForRentExemption(NONCE_ACCOUNT_LEN),
+    conn.getMinimumBalanceForRentExemption(PLAN_ACCOUNT_LEN),
+  ]);
+  return nonce + plan + FEE_BUFFER;
 }
 
 /** UC1: create nonce, sign the partial sweep, initialize the plan. Three wallet prompts. */
@@ -214,6 +230,13 @@ export async function createPlan(
   intervalSec: number,
   graceSec: number,
 ): Promise<{ nonce: PublicKey; signature: string }> {
+  const [need, have] = await Promise.all([createPlanCost(conn), conn.getBalance(w.publicKey, "confirmed")]);
+  if (have < need) {
+    throw new KimiDaUserError(
+      "Not enough SOL in this wallet",
+      `Creating a plan needs about ${(need / 1e9).toFixed(4)} SOL (most of it a refundable deposit); this wallet has ${(have / 1e9).toFixed(4)} SOL.`,
+    );
+  }
   const nonce = await createNonceAccount(conn, ctx, w);
   const sweepTx = await buildPartialSweep(conn, ctx, w, beneficiary, nonce);
 

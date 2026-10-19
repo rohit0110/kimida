@@ -1,6 +1,6 @@
-# Heirloom: Anchor workspace
+# KimiDa: Anchor workspace
 
-Non-custodial digital succession for Solana wallets. The owner keeps all assets in their own wallet and pre-signs a sweep to a beneficiary; if the owner stops checking in, the Heirloom keeper co-signs and broadcasts it after the deadline.
+Non-custodial digital succession for Solana wallets. The owner keeps all assets in their own wallet and pre-signs a sweep to a beneficiary; if the owner stops checking in, the KimiDa keeper co-signs and broadcasts it after the deadline.
 
 Requirements (REQ01-REQ26) and use cases (UC1-UC5) are defined in `../Heirloom-Deliverable-2-Architecture-and-Requirements.pdf` and referenced throughout the code and tests.
 
@@ -14,12 +14,12 @@ Requirements (REQ01-REQ26) and use cases (UC1-UC5) are defined in `../Heirloom-D
 anchor/
 ├── Anchor.toml
 ├── .env.example              # config template for keeper + client (copy to .env)
-├── programs/heirloom/        # ON-CHAIN: Anchor program (5 instructions)
+├── programs/kimida/        # ON-CHAIN: Anchor program (5 instructions)
 │   ├── src/{lib,state,error,constants}.rs, instructions/*.rs
 │   └── tests/plan_lifecycle.rs     # LiteSVM tests, one+ per on-chain REQ
-├── client/                   # OWNER SIDE: lib + `heirloom-client` CLI
+├── client/                   # OWNER SIDE: lib + `kimida-client` CLI
 │                             #   nonce creation (REQ21), partial-sweep signing (REQ22), UC1/2/4/5
-├── keeper/                   # BACKEND: lib + `heirloom-keeper` binary
+├── keeper/                   # BACKEND: lib + `kimida-keeper` binary
 │   ├── src/{scan,burn,state,config}.rs
 │   └── tests/e2e_multi_user.rs     # real-validator, multi-user end-to-end
 └── scripts/localnet.sh       # build with short timers + start a local validator
@@ -51,17 +51,17 @@ Off-chain: REQ16 (nonce burn), REQ21 (nonce creation), REQ22 (partial sweep), RE
 
 ```bash
 cd anchor
-anchor build                 # program -> target/deploy/heirloom.so + IDL (production bounds)
+anchor build                 # program -> target/deploy/kimida.so + IDL (production bounds)
 cargo test --workspace       # everything below, ~2 min (the e2e test dominates)
 ```
 
 | Test | What | Covers |
 |------|------|--------|
-| `programs/heirloom/tests/plan_lifecycle.rs` | LiteSVM. Test names carry the REQ id. Needs `anchor build` first (loads `target/deploy/heirloom.so`) | REQ01-REQ15, REQ17-REQ20, REQ25 |
+| `programs/kimida/tests/plan_lifecycle.rs` | LiteSVM. Test names carry the REQ id. Needs `anchor build` first (loads `target/deploy/kimida.so`) | REQ01-REQ15, REQ17-REQ20, REQ25 |
 | `keeper/tests/e2e_multi_user.rs` | Starts its own validator, builds the program with `short-timers`, runs real keeper + client. Owners A, B, C, D with separate beneficiaries; interleaved create / check-in / sweep / cancel; exact balance and status assertions | REQ16, REQ21-REQ24, REQ26 |
 | `keeper/src/scan.rs` unit tests | deadline logic | REQ23 |
 
-The e2e test skips with a message if `solana-test-validator` is not installed. Run it alone: `cargo test -p heirloom-keeper --test e2e_multi_user -- --nocapture`.
+The e2e test skips with a message if `solana-test-validator` is not installed. Run it alone: `cargo test -p kimida-keeper --test e2e_multi_user -- --nocapture`.
 
 ## 4. Configuration: chains, program ID, keys
 
@@ -71,10 +71,10 @@ The e2e test skips with a message if `solana-test-validator` is not installed. R
 |---------|----------------|-------|
 | Cluster endpoint | `RPC_URL` (env / `.env` / `--rpc`) | default `http://127.0.0.1:8899` |
 | Cluster identity | `KEEPER_EXPECTED_GENESIS_HASH` | the keeper refuses to run if the RPC's genesis hash differs. **Set this for every non-local deployment.** |
-| Program ID | `declare_id!` in `programs/heirloom/src/lib.rs` and `Anchor.toml` `[programs.<cluster>]` | one deployed program (and ideally one keypair) per cluster; `anchor keys sync` after changing `target/deploy/heirloom-keypair.json` |
+| Program ID | `declare_id!` in `programs/kimida/src/lib.rs` and `Anchor.toml` `[programs.<cluster>]` | one deployed program (and ideally one keypair) per cluster; `anchor keys sync` after changing `target/deploy/kimida-keypair.json` |
 | Keeper key | `KEEPER_KEYPAIR` | the nonce authority, fee payer and co-signer for every plan naming it |
 
-Config loading order (first wins): CLI flag, real environment variable, `./.env` (or a parent directory's), built-in default. `heirloom-keeper` and `heirloom-client` both load `.env`.
+Config loading order (first wins): CLI flag, real environment variable, `./.env` (or a parent directory's), built-in default. `kimida-keeper` and `kimida-client` both load `.env`.
 
 ```bash
 cp .env.example .env     # .env is gitignored; never commit it
@@ -102,7 +102,7 @@ The `short-timers` cargo feature lowers the minimum interval/grace to seconds so
 ./scripts/localnet.sh
 
 # terminal 2 (from anchor/)
-cargo run -p heirloom-keeper -- keygen                    # once; writes keeper/keeper-keypair.json (gitignored)
+cargo run -p kimida-keeper -- keygen                    # once; writes keeper/keeper-keypair.json (gitignored)
 KEEPER=$(solana address -k keeper/keeper-keypair.json)
 solana airdrop 5 $KEEPER -u localhost
 
@@ -112,14 +112,14 @@ solana airdrop 10 $(solana address -k /tmp/owner.json) -u localhost
 export OWNER_KEYPAIR=/tmp/owner.json
 
 # owner: create nonce (authority = keeper) + plan, interval 8s, grace 2s
-cargo run -p heirloom-client -- setup --keeper $KEEPER --beneficiary $(solana address -k /tmp/ben.json) --interval 8 --grace 2
-cargo run -p heirloom-client -- status
+cargo run -p kimida-client -- setup --keeper $KEEPER --beneficiary $(solana address -k /tmp/ben.json) --interval 8 --grace 2
+cargo run -p kimida-client -- status
 
 # keeper: too early, nothing happens
-KEEPER_SAFETY_MARGIN=0 cargo run -p heirloom-keeper -- scan
+KEEPER_SAFETY_MARGIN=0 cargo run -p kimida-keeper -- scan
 sleep 20
 # keeper: past the deadline on the FINALIZED clock (which lags ~12s on localnet), co-signs and sweeps
-KEEPER_SAFETY_MARGIN=0 cargo run -p heirloom-keeper -- scan
+KEEPER_SAFETY_MARGIN=0 cargo run -p kimida-keeper -- scan
 # if it reports "hard guard: finalized clock ... < deadline", the finalized clock has not caught up yet: re-run the scan
 solana balance $(solana address -k /tmp/ben.json) -u localhost
 ```
@@ -131,10 +131,10 @@ Other owner commands: `check-in`, `update --interval N --grace N`, `close` (the 
 The keeper is a long-running process (or a scheduled job). It is the only component that needs to be online for the protocol to work after setup.
 
 ```bash
-cargo run --release -p heirloom-keeper -- keygen     # once per environment
-cargo run --release -p heirloom-keeper -- info       # pubkey, balance, RPC genesis hash, program ID
-cargo run --release -p heirloom-keeper -- scan       # one pass (use from cron / a scheduler)
-cargo run --release -p heirloom-keeper -- run --every 3600   # or loop forever
+cargo run --release -p kimida-keeper -- keygen     # once per environment
+cargo run --release -p kimida-keeper -- info       # pubkey, balance, RPC genesis hash, program ID
+cargo run --release -p kimida-keeper -- scan       # one pass (use from cron / a scheduler)
+cargo run --release -p kimida-keeper -- run --every 3600   # or loop forever
 ```
 
 Each pass (REQ23):
@@ -150,7 +150,7 @@ Each pass (REQ23):
 cd anchor
 cp .env.example .env                 # RPC_URL, KEEPER_EXPECTED_GENESIS_HASH, KEEPER_SAFETY_MARGIN
 ./scripts/docker_load_key.sh keeper/devnet-keeper-keypair.json   # one-time: key -> `keeper-secrets` volume (via stdin)
-docker compose up -d --build         # builds the keeper image, runs `heirloom-keeper run --every 5`
+docker compose up -d --build         # builds the keeper image, runs `kimida-keeper run --every 5`
 docker compose logs -f keeper
 docker compose down                  # stop; keeper state persists in the `keeper-state` volume
 ```
@@ -162,7 +162,7 @@ Operating it:
 - **Funding:** the keeper pays all sweep and nonce-burn fees. Keep a balance and alert on low funds.
 - **State file:** `KEEPER_STATE` (`keeper-state.json`) maps plan -> (owner, nonce). Back it up and keep it on persistent storage; losing it means closed plans' nonces are no longer burned.
 - **Interval:** choose `--every` well below the smallest `grace_period` you allow, so a due plan is not left waiting long after its deadline plus margin.
-- **Production bounds:** the interval/grace min/max in `programs/heirloom/src/constants.rs` are placeholders pending a decision.
+- **Production bounds:** the interval/grace min/max in `programs/kimida/src/constants.rs` are placeholders pending a decision.
 
 **Open design question: plans per person.** The PDA allows one plan per wallet; nothing limits one person using many wallets. See `../frontend/NOTES.md`.
 
@@ -191,5 +191,5 @@ Checklist before any non-local deployment:
 ## 8. Notes
 
 - Frontend: `../frontend` (single page, wallet connect + create plan + sign). See its README.
-- This is a subfolder of the `heirloom` repo and has no git repo of its own (`anchor init --no-git`).
+- This is a subfolder of the `kimida` repo and has no git repo of its own (`anchor init --no-git`).
 - Secrets are gitignored: `.env`, `keeper/keeper-keypair.json`, `keeper/keeper-state.json`, `*-keypair.json`.

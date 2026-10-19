@@ -24,8 +24,8 @@ fi
 
 echo "== build"
 anchor build -- ${FEATURES[@]+"${FEATURES[@]}"}
-SO=target/deploy/heirloom.so
-PROGRAM_ID=$(solana address -k target/deploy/heirloom-keypair.json)
+SO=target/deploy/kimida.so
+PROGRAM_ID=$(solana address -k target/deploy/kimida-keypair.json)
 SIZE=$(stat -f%z "$SO" 2>/dev/null || stat -c%s "$SO")
 
 echo "== balance check"
@@ -43,12 +43,12 @@ else
 fi
 
 echo "== deploy"
-solana program deploy "$SO" --program-id target/deploy/heirloom-keypair.json \
+solana program deploy "$SO" --program-id target/deploy/kimida-keypair.json \
   --keypair "$WALLET" -u "$URL" ${MAXLEN[@]+"${MAXLEN[@]}"}
 
 echo "== keeper key"
 if [ ! -f "$KEEPER_KEY" ]; then
-  cargo run -q -p heirloom-keeper -- --keypair "$KEEPER_KEY" keygen
+  cargo run -q -p kimida-keeper -- --keypair "$KEEPER_KEY" keygen
 fi
 KEEPER=$(solana address -k "$KEEPER_KEY")
 solana transfer "$KEEPER" "$KEEPER_FUND_SOL" --keypair "$WALLET" -u "$URL" --allow-unfunded-recipient

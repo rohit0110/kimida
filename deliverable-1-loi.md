@@ -1,6 +1,6 @@
 # Turbin3 Capstone — Deliverable 1: Letter of Intent & On-Chain Use Cases
 
-**Project:** Heirloom — non-custodial digital succession for Solana wallets.
+**Project:** KimiDa — non-custodial digital succession for Solana wallets.
 
 ## CORE VALUE AND PROPOSITION
 

@@ -6,7 +6,7 @@
 services:
   keeper:
     build: .
-    image: heirloom-keeper:local
+    image: kimida-keeper:local
     restart: unless-stopped
     env_file: .env
     environment:

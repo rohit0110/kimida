@@ -7,7 +7,7 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
-heirloom = "Egn9Kgqa8sLT2F5u5DS26Bg791eW51HfKKuqSSp8euke"
+kimida = "Egn9Kgqa8sLT2F5u5DS26Bg791eW51HfKKuqSSp8euke"
 
 [provider]
 cluster = "localnet"

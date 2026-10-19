@@ -38,11 +38,11 @@ impl Plan {
     }
 
     pub fn validate_schedule(interval: i64, grace: i64) -> Result<()> {
-        use crate::{constants::*, error::HeirloomError};
+        use crate::{constants::*, error::KimiDaError};
         require!(
             (MIN_CHECKIN_INTERVAL..=MAX_CHECKIN_INTERVAL).contains(&interval)
                 && (MIN_GRACE_PERIOD..=MAX_GRACE_PERIOD).contains(&grace),
-            HeirloomError::InvalidSchedule
+            KimiDaError::InvalidSchedule
         );
         Ok(())
     }
@@ -50,7 +50,7 @@ impl Plan {
     pub fn validate_sweep_tx(sweep_tx: &[u8]) -> Result<()> {
         require!(
             sweep_tx.len() <= MAX_SWEEP_TX_LEN,
-            crate::error::HeirloomError::SweepTxTooLarge
+            crate::error::KimiDaError::SweepTxTooLarge
         );
         Ok(())
     }

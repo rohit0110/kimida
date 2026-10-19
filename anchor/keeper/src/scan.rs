@@ -4,7 +4,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use anchor_lang::{AccountDeserialize, Discriminator};
 use anyhow::{bail, Context, Result};
-use heirloom::{Plan, PlanStatus};
+use kimida::{Plan, PlanStatus};
 use solana_client::{
     rpc_client::RpcClient,
     rpc_config::{RpcAccountInfoConfig, RpcProgramAccountsConfig, RpcSimulateTransactionConfig},
@@ -139,7 +139,7 @@ pub fn fetch_plans(rpc: &RpcClient, keeper: &Pubkey) -> Result<Vec<(Pubkey, Plan
         ..Default::default()
     };
     #[allow(deprecated)]
-    let accounts = rpc.get_program_accounts_with_config(&heirloom::id(), cfg)?;
+    let accounts = rpc.get_program_accounts_with_config(&kimida::id(), cfg)?;
     accounts
         .into_iter()
         .map(|(pk, acc)| Ok((pk, Plan::try_deserialize(&mut acc.data.as_slice())?)))
@@ -166,7 +166,7 @@ pub fn preflight(rpc: &RpcClient, keeper: &Keypair, plan: &Plan, plan_pda: &Pubk
     }
 
     // Nonce still valid: stored value must equal the tx blockhash and authority must be us.
-    let nonce = heirloom_client::read_nonce(rpc, &plan.nonce_account)?;
+    let nonce = kimida_client::read_nonce(rpc, &plan.nonce_account)?;
     if nonce.authority != keeper.pubkey() {
         bail!("nonce authority is not the keeper");
     }
@@ -190,7 +190,7 @@ const COMPUTE_BUDGET_ID: Pubkey =
 const ADVANCE_NONCE_IX: u32 = 4;
 
 /// Shape of the owner-signed sweep: fee payer = keeper, instruction 0 = System `AdvanceNonceAccount`
-/// (required for a durable-nonce transaction), the last instruction = Heirloom `heir_sweep`, and
+/// (required for a durable-nonce transaction), the last instruction = KimiDa `heir_sweep`, and
 /// only Compute Budget instructions in between. Wallets commonly add those for priority fees, and
 /// they cannot move funds, so they are allowed; anything else is rejected.
 pub fn check_structure(msg: &solana_sdk::message::Message, keeper: &Pubkey) -> Result<()> {
@@ -213,7 +213,7 @@ pub fn check_structure(msg: &solana_sdk::message::Message, keeper: &Pubkey) -> R
             program_of(0)
         );
     }
-    if program_of(n - 1) != heirloom::id() {
+    if program_of(n - 1) != kimida::id() {
         bail!("last instruction is not heir_sweep");
     }
     for i in 1..n - 1 {
@@ -278,7 +278,7 @@ mod tests {
         use solana_system_interface::instruction as sysix;
 
         fn sweep_ix() -> Instruction {
-            Instruction::new_with_bytes(heirloom::id(), &[0u8; 8], vec![])
+            Instruction::new_with_bytes(kimida::id(), &[0u8; 8], vec![])
         }
         fn budget_ix() -> Instruction {
             Instruction::new_with_bytes(COMPUTE_BUDGET_ID, &[2, 0, 0, 0, 0], vec![])

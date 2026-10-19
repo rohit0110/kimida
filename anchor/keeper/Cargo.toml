@@ -1,5 +1,5 @@
 [package]
-name = "heirloom-keeper"
+name = "kimida-keeper"
 version = "0.1.0"
 edition.workspace = true
 rust-version.workspace = true
@@ -10,8 +10,8 @@ anyhow = "1"
 bincode = "1"
 clap = { version = "4", features = ["derive", "env"] }
 dotenvy = "0.15"
-heirloom = { path = "../programs/heirloom", features = ["no-entrypoint"] }
-heirloom-client = { version = "0.1.0", path = "../client" }
+kimida = { path = "../programs/kimida", features = ["no-entrypoint"] }
+kimida-client = { version = "0.1.0", path = "../client" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 solana-account-decoder-client-types = "3.1.14"

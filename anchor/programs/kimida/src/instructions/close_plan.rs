@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 
 use crate::{
     constants::*,
-    error::HeirloomError,
+    error::KimiDaError,
     state::{Plan, PlanStatus},
 };
 
@@ -25,7 +25,7 @@ pub fn handle_close_plan(ctx: Context<ClosePlan>) -> Result<()> {
     // REQ15: Active or Distributed may be closed. Keeper burns the nonce off-chain (REQ16).
     require!(
         matches!(ctx.accounts.plan.status, PlanStatus::Active | PlanStatus::Distributed),
-        HeirloomError::InvalidStatus
+        KimiDaError::InvalidStatus
     );
     Ok(())
 }

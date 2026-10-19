@@ -1,7 +1,7 @@
 // Print the plan for an owner pubkey, using the same decoder as the page.
 //   npx tsx scripts/read-plan.ts <owner-pubkey>
 import { Connection, PublicKey } from "@solana/web3.js";
-import { chainTime, fetchPlan } from "../src/heirloom";
+import { chainTime, fetchPlan } from "../src/kimida";
 
 const owner = new PublicKey(process.argv[2]);
 const conn = new Connection(process.env.RPC_URL ?? "https://api.devnet.solana.com", "confirmed");

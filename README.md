@@ -1,4 +1,4 @@
-# Heirloom
+# KimiDa
 
 Non-custodial digital succession for Solana wallets. You name a beneficiary and a check-in period.
 While you keep checking in, **your assets never leave your own wallet**: no vault, no escrow, no shared
@@ -60,7 +60,7 @@ Requirements (REQ01 to REQ26) and use cases (UC1 to UC5) are in
 to five seconds so a sweep can be shown live. A production build (`anchor build`, no feature) enforces a
 1-day / 1-hour minimum. **Never deploy a `short-timers` build to mainnet.**
 
-The program key (`target/deploy/heirloom-keypair.json`) is the same dev key used on localnet; use a fresh
+The program key (`target/deploy/kimida-keypair.json`) is the same dev key used on localnet; use a fresh
 program keypair per cluster for anything real.
 
 ### Accounts and instructions
@@ -90,17 +90,17 @@ Plan PDA: seeds `["plan", owner]`, so **one plan per wallet**.
 | `close_plan()` | owner | close the plan, return rent, delete `sweep_tx` | UC4 / REQ15 |
 
 `heir_sweep` also requires instruction 0 of the transaction to be System `AdvanceNonceAccount` on
-`plan.nonce_account` (REQ11). Custom errors are listed in `anchor/programs/heirloom/src/error.rs`.
+`plan.nonce_account` (REQ11). Custom errors are listed in `anchor/programs/kimida/src/error.rs`.
 
 ## 3. Repository layout
 
 ```
-heirloom/
+kimida/
 ├── README.md                 # this file
 ├── anchor/                   # on-chain program + owner CLI + keeper backend (Rust)
-│   ├── programs/heirloom/    #   Anchor program, LiteSVM tests
-│   ├── client/               #   owner library + `heirloom-client` CLI
-│   ├── keeper/               #   `heirloom-keeper` backend (+ multi-user e2e test)
+│   ├── programs/kimida/    #   Anchor program, LiteSVM tests
+│   ├── client/               #   owner library + `kimida-client` CLI
+│   ├── keeper/               #   `kimida-keeper` backend (+ multi-user e2e test)
 │   ├── Dockerfile, docker-compose.yml
 │   └── scripts/              #   localnet.sh, deploy_devnet.sh, docker_load_key.sh
 ├── frontend/                 # single-page UI (Vite + React + wallet-adapter)
@@ -170,9 +170,9 @@ deadline (finalized-clock lag plus the 10 s margin).
 ```bash
 cd anchor
 export OWNER_KEYPAIR=/path/to/owner.json
-cargo run -p heirloom-client -- setup --keeper AsEvw9nKTdCjW3hK3RiJtwNb2rNwaf8EYZmyRABCFGBM \
+cargo run -p kimida-client -- setup --keeper AsEvw9nKTdCjW3hK3RiJtwNb2rNwaf8EYZmyRABCFGBM \
     --beneficiary <PUBKEY> --interval 60 --grace 10 --rpc https://api.devnet.solana.com
-cargo run -p heirloom-client -- status      # also: check-in, update, close
+cargo run -p kimida-client -- status      # also: check-in, update, close
 ```
 
 ## 5. Configuration
@@ -199,7 +199,7 @@ cd frontend && npm run build                              # typecheck + bundle
 
 | Suite | Count | Covers |
 |-------|------:|--------|
-| `programs/heirloom/tests/plan_lifecycle.rs` (LiteSVM) | 33 | on-chain REQ01-REQ15, REQ17-REQ20, REQ25 |
+| `programs/kimida/tests/plan_lifecycle.rs` (LiteSVM) | 33 | on-chain REQ01-REQ15, REQ17-REQ20, REQ25 |
 | `client` unit tests | 5 | nonce account parsing (rejects legacy/uninitialized) |
 | `keeper` unit tests | 8 | deadline logic, sweep-structure preflight |
 | `keeper/tests/e2e_multi_user.rs` | 1 | real validator: four owners, interleaved create / check-in / sweep / cancel, exact balances (REQ16, REQ21-REQ24, REQ26) |
@@ -233,7 +233,7 @@ cd anchor
 DEMO_SHORT_TIMERS=1 ./scripts/deploy_devnet.sh     # builds, checks balance, deploys, creates + funds a keeper key
 # upgrade in place (same program ID, same authority wallet):
 anchor build -- --features short-timers
-solana program deploy target/deploy/heirloom.so --program-id target/deploy/heirloom-keypair.json -u devnet
+solana program deploy target/deploy/kimida.so --program-id target/deploy/kimida-keypair.json -u devnet
 ```
 
 The deploy script refuses any cluster whose genesis hash is not devnet's. A larger binary than the

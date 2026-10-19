@@ -14,7 +14,7 @@ use solana_sdk::{
 };
 use solana_system_interface::instruction as sysix;
 
-pub use heirloom::Plan;
+pub use kimida::Plan;
 
 /// Size of a System Program nonce account.
 pub const NONCE_ACCOUNT_LEN: usize = 80;
@@ -27,7 +27,7 @@ pub struct NonceInfo {
 
 /// REQ04: `Plan` PDA, seeds ["plan", owner].
 pub fn plan_pda(owner: &Pubkey) -> (Pubkey, u8) {
-    Pubkey::find_program_address(&[heirloom::PLAN_SEED, owner.as_ref()], &heirloom::id())
+    Pubkey::find_program_address(&[kimida::PLAN_SEED, owner.as_ref()], &kimida::id())
 }
 
 /// Parses a System Program nonce account:
@@ -79,9 +79,9 @@ pub fn create_nonce_account(rpc: &RpcClient, owner: &Keypair, keeper: &Pubkey) -
 
 fn heir_sweep_ix(owner: &Pubkey, beneficiary: &Pubkey, keeper: &Pubkey, nonce: &Pubkey) -> Instruction {
     Instruction::new_with_bytes(
-        heirloom::id(),
-        &heirloom::instruction::HeirSweep {}.data(),
-        heirloom::accounts::HeirSweep {
+        kimida::id(),
+        &kimida::instruction::HeirSweep {}.data(),
+        kimida::accounts::HeirSweep {
             owner: *owner,
             keeper: *keeper,
             beneficiary: *beneficiary,
@@ -115,8 +115,8 @@ pub fn build_partial_sweep(
     let mut tx = Transaction::new_unsigned(msg);
     tx.partial_sign(&[owner], info.blockhash);
     let bytes = bincode::serialize(&tx)?;
-    if bytes.len() > heirloom::MAX_SWEEP_TX_LEN {
-        bail!("partial sweep is {} bytes (max {})", bytes.len(), heirloom::MAX_SWEEP_TX_LEN);
+    if bytes.len() > kimida::MAX_SWEEP_TX_LEN {
+        bail!("partial sweep is {} bytes (max {})", bytes.len(), kimida::MAX_SWEEP_TX_LEN);
     }
     Ok(bytes)
 }
@@ -133,8 +133,8 @@ pub fn initialize_plan(
 ) -> Result<()> {
     let sweep_tx = build_partial_sweep(rpc, owner, beneficiary, keeper, nonce)?;
     let ix = Instruction::new_with_bytes(
-        heirloom::id(),
-        &heirloom::instruction::InitializePlan {
+        kimida::id(),
+        &kimida::instruction::InitializePlan {
             beneficiary: *beneficiary,
             keeper: *keeper,
             interval,
@@ -142,7 +142,7 @@ pub fn initialize_plan(
             sweep_tx,
         }
         .data(),
-        heirloom::accounts::InitializePlan {
+        kimida::accounts::InitializePlan {
             owner: owner.pubkey(),
             plan: plan_pda(&owner.pubkey()).0,
             nonce_account: *nonce,
@@ -163,9 +163,9 @@ fn fresh_sweep(rpc: &RpcClient, owner: &Keypair) -> Result<Vec<u8>> {
 pub fn check_in(rpc: &RpcClient, owner: &Keypair) -> Result<()> {
     let sweep_tx = fresh_sweep(rpc, owner)?;
     let ix = Instruction::new_with_bytes(
-        heirloom::id(),
-        &heirloom::instruction::CheckIn { sweep_tx }.data(),
-        heirloom::accounts::CheckIn {
+        kimida::id(),
+        &kimida::instruction::CheckIn { sweep_tx }.data(),
+        kimida::accounts::CheckIn {
             owner: owner.pubkey(),
             plan: plan_pda(&owner.pubkey()).0,
         }
@@ -178,9 +178,9 @@ pub fn check_in(rpc: &RpcClient, owner: &Keypair) -> Result<()> {
 pub fn update_plan(rpc: &RpcClient, owner: &Keypair, interval: i64, grace: i64) -> Result<()> {
     let sweep_tx = fresh_sweep(rpc, owner)?;
     let ix = Instruction::new_with_bytes(
-        heirloom::id(),
-        &heirloom::instruction::UpdatePlan { interval, grace, sweep_tx }.data(),
-        heirloom::accounts::UpdatePlan {
+        kimida::id(),
+        &kimida::instruction::UpdatePlan { interval, grace, sweep_tx }.data(),
+        kimida::accounts::UpdatePlan {
             owner: owner.pubkey(),
             plan: plan_pda(&owner.pubkey()).0,
         }
@@ -192,9 +192,9 @@ pub fn update_plan(rpc: &RpcClient, owner: &Keypair, interval: i64, grace: i64) 
 /// UC4. The keeper burns the nonce afterwards (REQ14).
 pub fn close_plan(rpc: &RpcClient, owner: &Keypair) -> Result<()> {
     let ix = Instruction::new_with_bytes(
-        heirloom::id(),
-        &heirloom::instruction::ClosePlan {}.data(),
-        heirloom::accounts::ClosePlan {
+        kimida::id(),
+        &kimida::instruction::ClosePlan {}.data(),
+        kimida::accounts::ClosePlan {
             owner: owner.pubkey(),
             plan: plan_pda(&owner.pubkey()).0,
         }

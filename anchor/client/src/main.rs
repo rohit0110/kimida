@@ -1,4 +1,4 @@
-//! Owner CLI for localnet demos: `heirloom-client --help`.
+//! Owner CLI for localnet demos: `kimida-client --help`.
 
 use anyhow::Result;
 use clap::{Parser, Subcommand};
@@ -66,25 +66,25 @@ fn main() -> Result<()> {
 
     match cli.cmd {
         Cmd::Setup { keeper, beneficiary, interval, grace } => {
-            let nonce = heirloom_client::create_nonce_account(&rpc, &owner, &keeper)?;
+            let nonce = kimida_client::create_nonce_account(&rpc, &owner, &keeper)?;
             println!("nonce account: {}", nonce.pubkey());
-            heirloom_client::initialize_plan(&rpc, &owner, &beneficiary, &keeper, &nonce.pubkey(), interval, grace)?;
-            println!("plan created: {}", heirloom_client::plan_pda(&owner.pubkey()).0);
+            kimida_client::initialize_plan(&rpc, &owner, &beneficiary, &keeper, &nonce.pubkey(), interval, grace)?;
+            println!("plan created: {}", kimida_client::plan_pda(&owner.pubkey()).0);
         }
         Cmd::CheckIn => {
-            heirloom_client::check_in(&rpc, &owner)?;
+            kimida_client::check_in(&rpc, &owner)?;
             println!("checked in");
         }
         Cmd::Update { interval, grace } => {
-            heirloom_client::update_plan(&rpc, &owner, interval, grace)?;
+            kimida_client::update_plan(&rpc, &owner, interval, grace)?;
             println!("plan updated");
         }
         Cmd::Close => {
-            heirloom_client::close_plan(&rpc, &owner)?;
+            kimida_client::close_plan(&rpc, &owner)?;
             println!("plan closed");
         }
         Cmd::Status => {
-            let p = heirloom_client::fetch_plan(&rpc, &owner.pubkey())?;
+            let p = kimida_client::fetch_plan(&rpc, &owner.pubkey())?;
             println!("owner:       {}", p.owner);
             println!("beneficiary: {}", p.beneficiary);
             println!("keeper:      {}", p.keeper);

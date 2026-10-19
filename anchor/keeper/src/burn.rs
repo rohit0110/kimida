@@ -15,17 +15,17 @@ pub fn burn_nonce(rpc: &RpcClient, keeper: &Keypair, nonce: &Pubkey, owner: &Pub
     let Some(acc) = rpc.get_account_with_commitment(nonce, rpc.commitment())?.value else {
         return Ok(()); // already gone
     };
-    let info = heirloom_client::parse_nonce(&acc.data)?;
+    let info = kimida_client::parse_nonce(&acc.data)?;
     if info.authority != keeper.pubkey() {
         bail!("keeper is not the authority of {nonce}");
     }
 
     // 1. Advance (invalidates every signed copy built on the old nonce value).
-    heirloom_client::send(rpc, &[sysix::advance_nonce_account(nonce, &keeper.pubkey())], keeper, &[])?;
+    kimida_client::send(rpc, &[sysix::advance_nonce_account(nonce, &keeper.pubkey())], keeper, &[])?;
 
     // 2. Withdrawing the full balance needs the stored nonce != current blockhash,
     //    so wait for a fresh blockhash first.
-    let stored = heirloom_client::read_nonce(rpc, nonce)?.blockhash;
+    let stored = kimida_client::read_nonce(rpc, nonce)?.blockhash;
     for _ in 0..60 {
         if rpc.get_latest_blockhash()? != stored {
             break;
@@ -33,7 +33,7 @@ pub fn burn_nonce(rpc: &RpcClient, keeper: &Keypair, nonce: &Pubkey, owner: &Pub
         sleep(Duration::from_millis(500));
     }
     let lamports = rpc.get_balance(nonce)?;
-    heirloom_client::send(
+    kimida_client::send(
         rpc,
         &[sysix::withdraw_nonce_account(nonce, &keeper.pubkey(), owner, lamports)],
         keeper,

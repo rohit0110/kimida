@@ -1,4 +1,4 @@
-// Drives src/heirloom.ts (the code the page uses) with a Keypair standing in for the wallet.
+// Drives src/kimida.ts (the code the page uses) with a Keypair standing in for the wallet.
 // Proves the browser-side encoding is accepted by the program and the Rust keeper.
 //
 //   npx tsx scripts/devnet-smoke.ts <owner-keypair.json> <beneficiary-pubkey> [intervalSec]
@@ -7,7 +7,7 @@
 
 import { readFileSync } from "node:fs";
 import { ComputeBudgetProgram, Connection, Keypair, PublicKey, Transaction } from "@solana/web3.js";
-import { chainTime, checkIn, closePlan, createPlan, fetchPlan, type OwnerWallet } from "../src/heirloom";
+import { chainTime, checkIn, closePlan, createPlan, fetchPlan, type OwnerWallet } from "../src/kimida";
 
 const [keyPath, benArg, intervalArg] = process.argv.slice(2);
 if (!keyPath || !benArg) {

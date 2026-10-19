@@ -12,7 +12,7 @@ pub use state::*;
 declare_id!("Egn9Kgqa8sLT2F5u5DS26Bg791eW51HfKKuqSSp8euke");
 
 #[program]
-pub mod heirloom {
+pub mod kimida {
     use super::*;
 
     /// UC1 / REQ01

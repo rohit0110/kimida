@@ -11,11 +11,12 @@ import App from "./App";
 import { RPC_URL } from "./config";
 import "./styles.css";
 
+// No autoConnect: the adapter would silently reconnect to a previously approved wallet on load.
 // Wallet Standard wallets (Phantom, Solflare, Backpack, ...) are detected automatically.
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <ConnectionProvider endpoint={RPC_URL}>
-      <WalletProvider wallets={[]} autoConnect>
+      <WalletProvider wallets={[]}>
         <WalletModalProvider>
           <App />
         </WalletModalProvider>

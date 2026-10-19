@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 
 /// Names follow the "Custom program constraints" table in the Deliverable 2 PDF (section 5.4).
 #[error_code]
-pub enum HeirloomError {
+pub enum KimiDaError {
     /// REQ02, REQ18
     #[msg("Check-in interval or grace period is zero or out of bounds")]
     InvalidSchedule,

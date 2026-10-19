@@ -4,7 +4,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 anchor build -- --features short-timers
-PROGRAM_ID=$(solana address -k target/deploy/heirloom-keypair.json)
+PROGRAM_ID=$(solana address -k target/deploy/kimida-keypair.json)
 echo "program id: $PROGRAM_ID"
 exec solana-test-validator --reset --ledger test-ledger \
-  --bpf-program "$PROGRAM_ID" target/deploy/heirloom.so
+  --bpf-program "$PROGRAM_ID" target/deploy/kimida.so

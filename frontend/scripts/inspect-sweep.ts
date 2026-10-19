@@ -1,7 +1,7 @@
 // Decode the stored partial sweep of a plan account and list its instructions.
 //   npx tsx scripts/inspect-sweep.ts <plan-pda>
 import { Connection, PublicKey, Transaction } from "@solana/web3.js";
-import { decodePlan } from "../src/heirloom";
+import { decodePlan } from "../src/kimida";
 
 const conn = new Connection(process.env.RPC_URL ?? "https://api.devnet.solana.com", "confirmed");
 const acc = await conn.getAccountInfo(new PublicKey(process.argv[2]), "confirmed");

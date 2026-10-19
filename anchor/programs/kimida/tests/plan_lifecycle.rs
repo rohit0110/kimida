@@ -1,4 +1,4 @@
-//! One test (or more) per requirement. Needs `anchor build` first (loads target/deploy/heirloom.so).
+//! One test (or more) per requirement. Needs `anchor build` first (loads target/deploy/kimida.so).
 //! Requirement ids follow the Deliverable 2 PDF (REQ01-REQ26). Off-chain requirements
 //! (REQ16, REQ21-REQ24, REQ26) are covered in keeper/tests/e2e_multi_user.rs.
 
@@ -8,7 +8,7 @@ use {
         solana_program::{instruction::Instruction, system_program},
         AccountDeserialize, InstructionData, ToAccountMetas,
     },
-    heirloom::{PlanStatus, MAX_SWEEP_TX_LEN, PLAN_SEED},
+    kimida::{PlanStatus, MAX_SWEEP_TX_LEN, PLAN_SEED},
     litesvm::LiteSVM,
     solana_account::Account,
     solana_clock::Clock,
@@ -57,11 +57,11 @@ fn nonce_account(authority: &Pubkey) -> Account {
 }
 
 fn new_env() -> Env {
-    let program_id = heirloom::id();
+    let program_id = kimida::id();
     let mut svm = LiteSVM::new();
     let bytes = include_bytes!(concat!(
         env!("CARGO_TARGET_TMPDIR"),
-        "/../deploy/heirloom.so"
+        "/../deploy/kimida.so"
     ));
     svm.add_program(program_id, bytes).unwrap();
     set_time(&mut svm, T0);
@@ -107,8 +107,8 @@ fn send(
 
 fn ix_init(e: &Env, ben: Pubkey, keeper: Pubkey, nonce: Pubkey, interval: i64, grace: i64, tx: Vec<u8>) -> Instruction {
     Instruction::new_with_bytes(
-        heirloom::id(),
-        &heirloom::instruction::InitializePlan {
+        kimida::id(),
+        &kimida::instruction::InitializePlan {
             beneficiary: ben,
             keeper,
             interval,
@@ -116,7 +116,7 @@ fn ix_init(e: &Env, ben: Pubkey, keeper: Pubkey, nonce: Pubkey, interval: i64, g
             sweep_tx: tx,
         }
         .data(),
-        heirloom::accounts::InitializePlan {
+        kimida::accounts::InitializePlan {
             owner: e.owner.pubkey(),
             plan: e.plan,
             nonce_account: nonce,
@@ -128,30 +128,30 @@ fn ix_init(e: &Env, ben: Pubkey, keeper: Pubkey, nonce: Pubkey, interval: i64, g
 
 fn ix_check_in(_e: &Env, signer: Pubkey, plan: Pubkey, tx: Vec<u8>) -> Instruction {
     Instruction::new_with_bytes(
-        heirloom::id(),
-        &heirloom::instruction::CheckIn { sweep_tx: tx }.data(),
-        heirloom::accounts::CheckIn { owner: signer, plan }.to_account_metas(None),
+        kimida::id(),
+        &kimida::instruction::CheckIn { sweep_tx: tx }.data(),
+        kimida::accounts::CheckIn { owner: signer, plan }.to_account_metas(None),
     )
 }
 
 fn ix_update(signer: Pubkey, plan: Pubkey, interval: i64, grace: i64, tx: Vec<u8>) -> Instruction {
     Instruction::new_with_bytes(
-        heirloom::id(),
-        &heirloom::instruction::UpdatePlan {
+        kimida::id(),
+        &kimida::instruction::UpdatePlan {
             interval,
             grace,
             sweep_tx: tx,
         }
         .data(),
-        heirloom::accounts::UpdatePlan { owner: signer, plan }.to_account_metas(None),
+        kimida::accounts::UpdatePlan { owner: signer, plan }.to_account_metas(None),
     )
 }
 
 fn ix_close(signer: Pubkey, plan: Pubkey) -> Instruction {
     Instruction::new_with_bytes(
-        heirloom::id(),
-        &heirloom::instruction::ClosePlan {}.data(),
-        heirloom::accounts::ClosePlan { owner: signer, plan }.to_account_metas(None),
+        kimida::id(),
+        &kimida::instruction::ClosePlan {}.data(),
+        kimida::accounts::ClosePlan { owner: signer, plan }.to_account_metas(None),
     )
 }
 
@@ -161,9 +161,9 @@ fn ix_advance(nonce: Pubkey, authority: Pubkey) -> Instruction {
 
 fn ix_sweep(e: &Env, beneficiary: Pubkey, keeper: Pubkey, nonce: Pubkey) -> Instruction {
     Instruction::new_with_bytes(
-        heirloom::id(),
-        &heirloom::instruction::HeirSweep {}.data(),
-        heirloom::accounts::HeirSweep {
+        kimida::id(),
+        &kimida::instruction::HeirSweep {}.data(),
+        kimida::accounts::HeirSweep {
             owner: e.owner.pubkey(),
             keeper,
             beneficiary,
@@ -183,9 +183,9 @@ fn init_ok(e: &mut Env) {
     send(&mut e.svm, &[ix], &e.owner.insecure_clone(), &[]).unwrap();
 }
 
-fn load_plan(e: &Env) -> heirloom::Plan {
+fn load_plan(e: &Env) -> kimida::Plan {
     let acc = e.svm.get_account(&e.plan).expect("plan account missing");
-    heirloom::Plan::try_deserialize(&mut acc.data.as_slice()).unwrap()
+    kimida::Plan::try_deserialize(&mut acc.data.as_slice()).unwrap()
 }
 
 fn sweep(e: &mut Env) -> Result<(), String> {
@@ -252,7 +252,7 @@ fn req01_req04_plan_is_program_owned_pda_and_stores_sweep_tx() {
     let mut e = new_env();
     init_ok(&mut e);
     let acc = e.svm.get_account(&e.plan).unwrap();
-    assert_eq!(acc.owner, heirloom::id());
+    assert_eq!(acc.owner, kimida::id());
     assert_eq!(load_plan(&e).sweep_tx, sweep_bytes());
     assert!(load_plan(&e).bump > 0);
 }
@@ -611,7 +611,7 @@ fn extra_rejects_default_beneficiary() {
 #[test]
 fn req25_plan_account_size_matches_layout() {
     // 8 discriminator + 4*32 pubkeys + 3*8 i64 + status + bump + (4 + 1232) sweep_tx
-    assert_eq!(8 + <heirloom::Plan as anchor_lang::Space>::INIT_SPACE, 8 + 128 + 24 + 1 + 1 + 4 + MAX_SWEEP_TX_LEN);
+    assert_eq!(8 + <kimida::Plan as anchor_lang::Space>::INIT_SPACE, 8 + 128 + 24 + 1 + 1 + 4 + MAX_SWEEP_TX_LEN);
 }
 
 // REQ16, REQ21, REQ22, REQ23, REQ24, REQ26 are off-chain: see keeper/tests/e2e_multi_user.rs.

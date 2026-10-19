@@ -1,16 +1,16 @@
 # Turbin3 Capstone, Deliverable 1: Letter of Intent & On-Chain Use Cases (Draft v2)
 
-**Project:** Heirloom, non-custodial digital succession for Solana wallets.
+**Project:** KimiDa, non-custodial digital succession for Solana wallets.
 
 ## Overview
 
-Heirloom is a non-custodial inheritance protocol for Solana wallets. It lets an owner name one or more beneficiaries and set a check-in interval that proves they are still active, without ever moving assets into an escrow or handing out a shared keypair while they are alive. If the owner misses their check-in window, an on-chain instruction sweeps the current balance from the owner's wallet to the named beneficiary or beneficiaries. The goal is to make crypto inheritance as simple as it should be: assets move from A to B when the trigger fires, with no added custody layer and no loss of control for the owner while they're still using their own funds.
+KimiDa is a non-custodial inheritance protocol for Solana wallets. It lets an owner name one or more beneficiaries and set a check-in interval that proves they are still active, without ever moving assets into an escrow or handing out a shared keypair while they are alive. If the owner misses their check-in window, an on-chain instruction sweeps the current balance from the owner's wallet to the named beneficiary or beneficiaries. The goal is to make crypto inheritance as simple as it should be: assets move from A to B when the trigger fires, with no added custody layer and no loss of control for the owner while they're still using their own funds.
 
 ## Part A: Define It Yourself
 
 ### 1. Core Value Proposition & Product-Market Fit (PMF)
 
-The idea is inheritance without giving up access to your own assets. Assets sitting in a wallet need to be able to pass on to one or more accounts the owner declares up front. The owner decides how often they need to check in to prove they're still alive, and if that check-in window is breached, a transaction moves the assets from the owner's wallet to the beneficiary or beneficiaries. Right now no product on Solana lets this happen without either locking the assets into an escrow account or relying on a shared keypair between owner and beneficiary, and both of those force the owner to give up full control of their own funds while they're still alive and using them. Inheritance should be simple: A goes to B when the trigger fires. That's the problem Heirloom is solving.
+The idea is inheritance without giving up access to your own assets. Assets sitting in a wallet need to be able to pass on to one or more accounts the owner declares up front. The owner decides how often they need to check in to prove they're still alive, and if that check-in window is breached, a transaction moves the assets from the owner's wallet to the beneficiary or beneficiaries. Right now no product on Solana lets this happen without either locking the assets into an escrow account or relying on a shared keypair between owner and beneficiary, and both of those force the owner to give up full control of their own funds while they're still alive and using them. Inheritance should be simple: A goes to B when the trigger fires. That's the problem KimiDa is solving.
 
 **Coverage check, missing value drivers:**
 
@@ -56,7 +56,7 @@ The original claim, "no product exists on Solana which allows transfer of assets
 
 > No Solana product lets the owner keep using their assets completely normally, with no separate vault and no deposit step, while still guaranteeing an automatic, trustless transfer on death or incapacitation.
 
-That's the actual gap Heirloom needs to hold, and it's the reason the live-balance-sweep mechanism (see the POC work) matters: it's the only approach found so far that avoids a deposit step entirely.
+That's the actual gap KimiDa needs to hold, and it's the reason the live-balance-sweep mechanism (see the POC work) matters: it's the only approach found so far that avoids a deposit step entirely.
 
 ### 4. Founder-Market Fit (FMF)
 
@@ -104,7 +104,7 @@ Updates to Phase 1 based on the valid points above:
 
 ## Phase 2: Rough Draft of First Possible Use Cases & On-Chain Requirements
 
-Design note before the tables: a vault deposit is not part of this build. That's the whole point of the PMF in Part A, if the owner has to deposit SOL into a program-owned account up front, Heirloom is just Eternal Key or Dead Man's Vault with different branding. So native SOL uses the presigned durable-nonce mechanism validated in the Appendix POC, and SPL tokens use the delegate-approve model, neither one ever takes custody of the owner's assets while they're alive.
+Design note before the tables: a vault deposit is not part of this build. That's the whole point of the PMF in Part A, if the owner has to deposit SOL into a program-owned account up front, KimiDa is just Eternal Key or Dead Man's Vault with different branding. So native SOL uses the presigned durable-nonce mechanism validated in the Appendix POC, and SPL tokens use the delegate-approve model, neither one ever takes custody of the owner's assets while they're alive.
 
 The tradeoff, documented in the Appendix, is that the presigned-tx path is a single-use bearer instrument: one premature submission attempt, by anyone holding the bytes, burns the nonce permanently with no retry. Since there's no vault to fall back on, this draft manages that risk operationally instead of by giving up the no-deposit property: custody of the signed bytes is restricted to a single trusted relay rather than published or handed to the beneficiary, the relay reads the Plan PDA's on-chain state and refuses to broadcast before the deadline, and every check-in rotates the nonce and has the owner re-sign a fresh copy, so old copies that leaked or floated around go stale on their own. None of this makes a premature submission impossible, it reduces who could ever attempt one and how long a given copy stays dangerous.
 
@@ -223,7 +223,7 @@ Compare this to the SPL `approve()` delegate model: a premature `claim_delegated
 
 Native SOL has no `approve()` equivalent, so *something* has to be captured in advance for a beneficiary to move it later without the owner. The decision, made for this draft: accept the fragility and mitigate it operationally, rather than fall back to a vault.
 
-A vault deposit was considered and rejected. It's retry-safe and removes the fragility entirely, but it also removes the entire reason Heirloom exists: it would mean the owner gives up normal use of their SOL while alive, exactly the objection this project raised against Eternal Key and Dead Man's Vault in Part A #3. Adopting it would turn Heirloom into a third version of a product that already exists twice.
+A vault deposit was considered and rejected. It's retry-safe and removes the fragility entirely, but it also removes the entire reason KimiDa exists: it would mean the owner gives up normal use of their SOL while alive, exactly the objection this project raised against Eternal Key and Dead Man's Vault in Part A #3. Adopting it would turn KimiDa into a third version of a product that already exists twice.
 
 Instead, the mitigation is operational, laid out in the Phase 2 use cases above: custody of the presigned bytes is restricted to a single trusted relay instead of being published or handed to the beneficiary, the relay checks the Plan PDA's on-chain state before ever broadcasting, and every check-in has the owner advance their own nonce account and re-sign a fresh copy, which makes stale copies fail harmlessly inside `AdvanceNonceAccount` rather than sit around as a live risk. This narrows the danger window to between one check-in and the next, and to whoever the owner trusts as the relay, but it does not make a premature submission impossible. That residual risk is a real, disclosed tradeoff of avoiding a vault, not a solved problem.
 

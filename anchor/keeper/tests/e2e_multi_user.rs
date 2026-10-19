@@ -18,8 +18,8 @@ use std::{
     time::{Duration, Instant},
 };
 
-use heirloom::PlanStatus;
-use heirloom_keeper::{config::Config, scan};
+use kimida::PlanStatus;
+use kimida_keeper::{config::Config, scan};
 use solana_client::rpc_client::RpcClient;
 use solana_commitment_config::CommitmentConfig;
 use solana_sdk::{
@@ -64,11 +64,11 @@ fn start_chain() -> Option<Chain> {
         return None;
     }
 
-    let dir = std::env::temp_dir().join(format!("heirloom-e2e-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("kimida-e2e-{}", std::process::id()));
     std::fs::create_dir_all(&dir).unwrap();
 
     // Program with second-scale timers (never use this build outside localnet).
-    let manifest = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../programs/heirloom/Cargo.toml");
+    let manifest = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../programs/kimida/Cargo.toml");
     let deploy = dir.join("deploy");
     let status = Command::new("cargo")
         .args(["build-sbf", "--features", "short-timers", "--manifest-path"])
@@ -85,8 +85,8 @@ fn start_chain() -> Option<Chain> {
         .arg(dir.join("ledger"))
         .args(["--rpc-port", &rpc_port.to_string(), "--faucet-port", &faucet_port.to_string()])
         .arg("--bpf-program")
-        .arg(heirloom::id().to_string())
-        .arg(deploy.join("heirloom.so"))
+        .arg(kimida::id().to_string())
+        .arg(deploy.join("kimida.so"))
         .stdout(std::fs::File::create(dir.join("validator.log")).unwrap())
         .stderr(Stdio::null())
         .spawn()
@@ -125,7 +125,7 @@ fn bal(rpc: &RpcClient, k: &Pubkey) -> u64 {
 }
 
 fn status(rpc: &RpcClient, owner: &Pubkey) -> PlanStatus {
-    heirloom_client::fetch_plan(rpc, owner).unwrap().status
+    kimida_client::fetch_plan(rpc, owner).unwrap().status
 }
 
 /// Run keeper scans until `owner`'s plan reaches `want` (or time out). Deadlines are judged on the
@@ -175,14 +175,14 @@ fn multi_user_flow() {
     // REQ21 + REQ22 + UC1 happen inside `setup`: owner creates the nonce (authority = keeper),
     // builds + partially signs [AdvanceNonce, heir_sweep], then initialize_plan.
     let setup = |owner: &Keypair, heir: &Pubkey, interval: i64, grace: i64| -> Pubkey {
-        let nonce = heirloom_client::create_nonce_account(rpc, owner, &kp).unwrap();
-        heirloom_client::initialize_plan(rpc, owner, heir, &kp, &nonce.pubkey(), interval, grace).unwrap();
+        let nonce = kimida_client::create_nonce_account(rpc, owner, &kp).unwrap();
+        kimida_client::initialize_plan(rpc, owner, heir, &kp, &nonce.pubkey(), interval, grace).unwrap();
         nonce.pubkey()
     };
 
     // ---- 1-2. A and B create ----
     let a_nonce = setup(&a, &ba.pubkey(), 12, 2);
-    assert_eq!(heirloom_client::read_nonce(rpc, &a_nonce).unwrap().authority, kp, "REQ21 nonce authority");
+    assert_eq!(kimida_client::read_nonce(rpc, &a_nonce).unwrap().authority, kp, "REQ21 nonce authority");
     assert_eq!(status(rpc, &a.pubkey()), PlanStatus::Active);
     setup(&b, &bb.pubkey(), 40, 2);
     assert_eq!(status(rpc, &b.pubkey()), PlanStatus::Active);
@@ -192,7 +192,7 @@ fn multi_user_flow() {
     assert_eq!(bal(rpc, &ba.pubkey()), 0);
 
     // ---- 4. REQ26: past the deadline, a huge safety margin still blocks signing ----
-    let a_deadline = heirloom_client::fetch_plan(rpc, &a.pubkey()).unwrap().deadline();
+    let a_deadline = kimida_client::fetch_plan(rpc, &a.pubkey()).unwrap().deadline();
     let t0 = Instant::now();
     while finalized_clock(rpc) < a_deadline {
         assert!(t0.elapsed() < Duration::from_secs(90));
@@ -217,7 +217,7 @@ fn multi_user_flow() {
     setup(&c, &a.pubkey(), 12, 2);
     let d_nonce = setup(&d, &bd.pubkey(), 600, 600);
     scan::run_scan(&cfg).unwrap(); // keeper must see D's plan to learn its nonce (known gap)
-    heirloom_client::close_plan(rpc, &d).unwrap();
+    kimida_client::close_plan(rpc, &d).unwrap();
 
     // ---- 6. REQ16: closed plan -> nonce burned; A not swept twice ----
     scan::run_scan(&cfg).unwrap();
@@ -226,7 +226,7 @@ fn multi_user_flow() {
     assert_eq!(bal(rpc, &ba.pubkey()), a_bal, "A is not swept twice");
 
     // ---- 7. B checks in (timer reset) ----
-    heirloom_client::check_in(rpc, &b).unwrap();
+    kimida_client::check_in(rpc, &b).unwrap();
     assert_eq!(status(rpc, &b.pubkey()), PlanStatus::Active);
 
     // ---- 8. C's deadline passes -> funds land in A's wallet; B still waits ----

@@ -1,6 +1,6 @@
-# Turbin3 Capstone, Deliverable 1: Heirloom
+# Turbin3 Capstone, Deliverable 1: KimiDa
 
-**Project:** Heirloom, non-custodial digital succession for Solana wallets.
+**Project:** KimiDa, non-custodial digital succession for Solana wallets.
 
 ---
 
@@ -8,7 +8,7 @@
 
 ## Project Overview
 
-Heirloom is a non-custodial inheritance protocol for Solana wallets. An owner names one or more beneficiaries and sets a check-in interval that proves they're still active. A missed check-in doesn't trigger anything immediately, the plan moves through a staged series of warnings first, giving the owner multiple chances to check in before any funds move. Only after the final deadline passes does a transaction sweep the owner's balance to the named beneficiary or beneficiaries, and at no point does the owner deposit assets into an escrow, a vault, or a shared keypair to make that possible.
+KimiDa is a non-custodial inheritance protocol for Solana wallets. An owner names one or more beneficiaries and sets a check-in interval that proves they're still active. A missed check-in doesn't trigger anything immediately, the plan moves through a staged series of warnings first, giving the owner multiple chances to check in before any funds move. Only after the final deadline passes does a transaction sweep the owner's balance to the named beneficiary or beneficiaries, and at no point does the owner deposit assets into an escrow, a vault, or a shared keypair to make that possible.
 
 ## Value Proposition
 
@@ -16,7 +16,7 @@ An owner's SOL and tokens stay in their own wallet and accounts for as long as t
 
 ## Product-Market Fit
 
-No product on Solana lets an owner do this without giving something up first. Eternal Key and Dead Man's Vault both require depositing assets into a program-owned vault ahead of time, meaning the owner loses normal use of those specific assets the whole time the switch is armed. Deadhand Protocol avoids a vault, but only by holding a shard of the owner's key on a server, a different kind of third-party trust. Heirloom's fit is narrower and more defensible than "no inheritance product exists": it's the only approach found across a live competitor search that keeps the owner's assets in their own wallet, under their own key, with no third party holding so much as a fragment of it, while still guaranteeing an automatic transfer on death or incapacitation. That specific gap, not inheritance in general, is the product.
+No product on Solana lets an owner do this without giving something up first. Eternal Key and Dead Man's Vault both require depositing assets into a program-owned vault ahead of time, meaning the owner loses normal use of those specific assets the whole time the switch is armed. Deadhand Protocol avoids a vault, but only by holding a shard of the owner's key on a server, a different kind of third-party trust. KimiDa's fit is narrower and more defensible than "no inheritance product exists": it's the only approach found across a live competitor search that keeps the owner's assets in their own wallet, under their own key, with no third party holding so much as a fragment of it, while still guaranteeing an automatic transfer on death or incapacitation. That specific gap, not inheritance in general, is the product.
 
 ## Target Markets & User Profiles
 
@@ -37,7 +37,7 @@ DAOs and multisig treasury succession were considered as a segment and depriorit
 
 ## Competitor Landscape
 
-| Competitor | Chain | Mechanism | How Heirloom differs |
+| Competitor | Chain | Mechanism | How KimiDa differs |
 |---|---|---|---|
 | Eternal Key | Solana | Owner deposits assets into an escrow account ahead of time. | No deposit, assets stay in the owner's own wallet. |
 | Dead Man's Vault (DMV) | Solana (Seeker) | Heartbeat check-in with a 4-stage escalation, owner deposits SOL/SPL/NFTs into a vault PDA up front. | Same escalation idea, but no vault deposit, uses a presigned transaction and a token delegate instead of custody. |
@@ -46,7 +46,7 @@ DAOs and multisig treasury succession were considered as a segment and depriorit
 
 ## Founder-Market Fit
 
-I'm a generalist engineer with 4 years of professional experience, most of it in SRE, with solid experience across mobile app development, full-stack development, and DevOps, including freelance work building Solana Mobile demo applications. I got into crypto in April 2025. What I bring to this specific project is an infrastructure and reliability mindset: while building the proof of concept for Heirloom's core mechanism, I found a real, non-obvious fragility (a presigned transaction becomes a single-use bearer instrument under Solana's durable-nonce rules) before it ever reached production, exactly the kind of adversarial-conditions thinking this protocol needs, given it will hold or move other people's inheritance on a single missed check-in. I don't have deep pre-existing Solana or Anchor security expertise, and I'm building that directly through this project rather than claiming it up front. My current biggest gap is distribution and network: no existing relationship yet with wallet teams (Phantom, Solflare, Backpack) or Solana community channels that this product will eventually need to reach the families it's meant for. Closing that is an explicit next step, not something being ignored.
+I'm a generalist engineer with 4 years of professional experience, most of it in SRE, with solid experience across mobile app development, full-stack development, and DevOps, including freelance work building Solana Mobile demo applications. I got into crypto in April 2025. What I bring to this specific project is an infrastructure and reliability mindset: while building the proof of concept for KimiDa's core mechanism, I found a real, non-obvious fragility (a presigned transaction becomes a single-use bearer instrument under Solana's durable-nonce rules) before it ever reached production, exactly the kind of adversarial-conditions thinking this protocol needs, given it will hold or move other people's inheritance on a single missed check-in. I don't have deep pre-existing Solana or Anchor security expertise, and I'm building that directly through this project rather than claiming it up front. My current biggest gap is distribution and network: no existing relationship yet with wallet teams (Phantom, Solflare, Backpack) or Solana community channels that this product will eventually need to reach the families it's meant for. Closing that is an explicit next step, not something being ignored.
 
 ## Actors
 
